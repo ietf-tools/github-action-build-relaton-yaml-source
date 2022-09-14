@@ -1,0 +1,29 @@
+name: "Fetch bibliographic data for BibXML service"
+description: "Fetches bibliographic data using relaton-cli with specified adapter. Specifies gem version compatible with IETF BibXML service."
+inputs:
+  relaton-adapter:
+    description: "relaton-cli adapter ID (e.g., nist-tech-pubs)"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Use Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.0
+    - name: Update gems
+      run: |
+        gem install relaton-cli -v "~> 1.13.0"
+    - name: Fetch documents
+      run: |
+        rm -rf data
+        relaton fetch-data ${{ inputs.relaton-adapter }}
+    - name: Push data
+      run: |
+        echo `date` > flag.txt
+        git config user.name ietf-bib-bot
+        git config user.email gh-bib-bot@llc.ietf.org
+        git add data flag.txt
+        git diff --quiet && git diff --staged --quiet || (git commit -m 'update documents' && git push)
